@@ -3,7 +3,7 @@ Audience
 
 Evaluates a given tweet audience, for example :
 ```shell
-audience https://twitter.com/volent_test/status/413247291634364416
+$ audience https://twitter.com/volent_test/status/413247291634364416
 User volent_ has 29 followers.
 User volent_test has 3 followers.
 _______________________________________
