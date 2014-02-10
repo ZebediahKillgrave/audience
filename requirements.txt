@@ -1,0 +1,4 @@
+argparse==1.2.1
+audience==0.1
+tweepy==2.2
+wsgiref==0.1.2
