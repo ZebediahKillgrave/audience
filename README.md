@@ -26,13 +26,21 @@ If you don't you won't be able to connect to the Twitter API.
 
 # Example
 
-```$ audience -f urls.example --not-me```
+```shell
+$ audience -f urls.example --not-me
+```
 
-```$ audience https://twitter.com/SDEntrepreneurs/status/430989433111060480 -v```
+```shell
+$ audience https://twitter.com/SDEntrepreneurs/status/430989433111060480 -v
+```
 
-```$ audience -f urls.example --not-me -v```
+```shell
+$ audience -f urls.example --not-me -v
+```
 
-```$ audience -f urls.example```
+```shell
+$ audience -f urls.example
+```
 
 # Man
 
