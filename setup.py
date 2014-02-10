@@ -10,7 +10,7 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'audience = aacc.main:main',
+            'audience = audience.main:main',
             ]
         },
     install_requires = [
