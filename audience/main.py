@@ -1,5 +1,6 @@
 import tweepy
 import logging
+from time import time
 from sys import argv
 from keys import CONSUMER_KEY, CONSUMER_SECRET, USER_KEY, USER_SECRET
 
@@ -47,30 +48,60 @@ class FollowRTProc(object):
         rts = self.api.retweets(self.tweetid, count)
         for rt in rts:
             self.add_retweeter(rt.user)
-        me = self.api.get_user(screen_name=self.orga)
-        self.add_retweeter(me)
+        if "--not-me" not in argv:
+            me = self.api.get_user(screen_name=self.orga)
+            self.add_retweeter(me)
 
     def print_count(self):
-        for user in self.users:
-            print "User {} has {} followers.".format(user.screen_name, user.followers_count)
-        print "_______________________________________\n"
-        print "That's a total of {} retweets.".format(len(self.users) - 1)
+        if "-v" in argv:
+            for user in self.users:
+                print "User {} has {} followers.".format(user.screen_name, user.followers_count)
+                print "_______________________________________\n"
+            print "That's a total of {} retweets.".format(len(self.users) - 1)
         print "Tweet {} has an audience of about {} people.".format(self.tweetid, self.count)
 
+def usage():
+    print ("Usage: audience [link]\n"
+           "Example: audience https://twitter.com/SDEntrepreneurs/status/431412241150529536")
+    exit(1)
+
+def process(auth, datas):
+    for data in datas:
+        limits = RateLimit(auth.api.rate_limit_status())
+        limits.check_remaining("statuses", "retweets/:id")
+        limits.check_remaining("users", "show/:id")
+        frt = FollowRTProc(auth.api, data["tweetid"], data["orga"])
+        frt.run()
+        frt.print_count()
+
+def parse_url(url):
+    tweetid = url.split('/')[-1]
+    orga = url.split('/')[-3]
+    return {"tweetid":tweetid, "orga":orga}
+    
+def get_urls_from_filename(filename):
+    urls = []
+    print "Starting audience computing for :"
+    with open(filename) as f:
+        for url in f.readlines():
+            urls.append(url.strip("\n"))
+            if "-v" in argv:
+                print urls[-1]
+    return urls
+
 def main():
-    if len(argv) != 2:
-        print ("Usage: audience [link]\n"
-               "Example: audience https://twitter.com/SDEntrepreneurs/status/431412241150529536")
-        return
-    tweetid = argv[1].split('/')[-1]
-    orga = argv[1].split('/')[-3]
+    if len(argv) < 2 or (argv[1] == "-f" and len(argv) < 3):
+        usage()
+    if argv[1] == "-f":
+        urls = get_urls_from_filename(argv[2])
+    else:
+        urls = [argv[1]]
     auth = AuthHandler(CONSUMER_KEY, CONSUMER_SECRET, USER_KEY, USER_SECRET)
-    frt = FollowRTProc(auth.api, tweetid, orga)
-    limits = RateLimit(auth.api.rate_limit_status())
-    limits.check_remaining("statuses", "retweets/:id")
-    limits.check_remaining("users", "show/:id")
-    frt.run()
-    frt.print_count()
+    try:
+        process(auth, map(parse_url, urls))
+    except TwitterLimit as e:
+        print str(e)
+
 
 if __name__ == "__main__":
     main()
