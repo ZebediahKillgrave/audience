@@ -24,27 +24,27 @@ If you don't you won't be able to connect to the Twitter API.
 
 # Man
 
-### NAME
+#### NAME
 
-	audience - approximate audience of a given tweet/set of tweets
+audience - approximate audience of a given tweet/set of tweets
 
-### SYNOPSIS
+#### SYNOPSIS
 
-	audience tweet_url [-v] [--not-me]
-	audience -f filename [-v] [--not-me]
+audience tweet_url [-v] [--not-me]
 
-### DESCRIPTON
+audience -f filename [-v] [--not-me]
 
-	In the 1st form, uses the tweet_url to calculate the audience. It must be a direct link to a tweet. In the 2nd form, it does the same thing for every link in the file passed as parameter. There must be one link per line and each link must be a direct link to a tweet.
-	Because of twitter rate API limits you can only use this script for 15 urls / 15 minutes.
+#### DESCRIPTON
 
-### OPTIONS
+In the 1st form, uses the tweet_url to calculate the audience. It must be a direct link to a tweet. In the 2nd form, it does the same thing for every link in the file passed as parameter. There must be one link per line and each link must be a direct link to a tweet.
+Because of twitter rate API limits you can only use this script for 15 urls / 15 minutes.
 
-      -v	
-      		verbose mode
-      --not-me
-		don't count own followers
+#### OPTIONS
 
-### AUTHOR
+-v	 : verbose mode
 
-	Written by Florent Espanet
+--not-me : don't count own followers
+
+#### AUTHOR
+
+Written by Florent Espanet
