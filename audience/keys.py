@@ -1,0 +1,5 @@
+CONSUMER_KEY = ''
+CONSUMER_SECRET = ''
+
+USER_KEY = ''
+USER_SECRET = ''
