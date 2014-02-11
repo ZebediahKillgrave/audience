@@ -13,16 +13,25 @@ Tweet 413247291634364416 has an audience of about 32 people.
 
 # How To Use
 
-If you've tried to launch the main.py without doing the following step
-you probably stumbled across an ImportError telling you to come here.
-You just have to execute this command :
+First you need to fill the keys.py file with your info :
 
 ```shell
 cp keys.py.sample keys.py
 ```
 
-And then you can paste your own keys in each variable without changing their name.
-If you don't you won't be able to connect to the Twitter API.
+Don't forget to paste your own keys in each variable without changing their name.
+If you do you won't be able to connect to the Twitter API.
+
+Then install the package in a virtualenv :
+
+```shell
+$ virtualenv env --distribute
+$ source env/bin/acivate
+(env)$ pip install -e .
+```
+
+Now you should have successfully installed the package !
+If you want it in your main python path just execute the last command : `pip install -e .`.
 
 # Example
 
