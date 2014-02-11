@@ -59,6 +59,7 @@ class FollowRTProc(object):
                 print "_______________________________________\n"
             print "That's a total of {} retweets.".format(len(self.users) - 1)
         print "Tweet {} has an audience of about {} people.".format(self.tweetid, self.count)
+        return self.count
 
 def usage():
     print ("Usage: audience [link]\n"
@@ -66,13 +67,15 @@ def usage():
     exit(1)
 
 def process(auth, datas):
+    total = 0
     for data in datas:
         limits = RateLimit(auth.api.rate_limit_status())
         limits.check_remaining("statuses", "retweets/:id")
         limits.check_remaining("users", "show/:id")
         frt = FollowRTProc(auth.api, data["tweetid"], data["orga"])
         frt.run()
-        frt.print_count()
+        total += frt.print_count()
+    print "Total audience : {}".format(total)
 
 def parse_url(url):
     tweetid = url.split('/')[-1]
@@ -81,7 +84,8 @@ def parse_url(url):
     
 def get_urls_from_filename(filename):
     urls = []
-    print "Starting audience computing for :"
+    if "-v" in argv:
+        print "Starting audience computing for :"
     with open(filename) as f:
         for url in f.readlines():
             urls.append(url.strip("\n"))
