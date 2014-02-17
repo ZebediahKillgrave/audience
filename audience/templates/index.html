@@ -1,0 +1,45 @@
+<html>
+  <head>
+    <title>Audience</title>
+    <link href="{{url_for('static',
+		filename='css/bootstrap.min.css')}}" rel="stylesheet">
+    <style type="text/css">
+      body {
+      padding: 50px;
+      width: 750px;
+      text-align: center;
+      margin: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Audience</h1>
+    {% if error %}
+    <div class="alert alert-danger">
+      <a class="close" data-dismiss="alert">×</a>
+      {{ error }}
+    </div>
+    </p>
+    {% endif %}
+    {% if stats %}
+    <p>
+      <h2>
+	Total : {{ stats["total"] }} 
+	[{{ nurl["done"] }}/{{ nurl["total"] }}]
+      </h2>
+      <br>
+    </p>
+    {% endif %}
+    <p>
+      Entrez les liens twitter si dessous :
+      <form action="." method="post">
+	<textarea name="urls" cols="80" rows="10"></textarea>
+	<br><br>
+	<input type="submit" value="Calculer..">
+      </form>
+    <p>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+      <script src="{{url_for('static', filename='js/bootstrap.min.js')}}"></script>
+  </body>
+
+</html>

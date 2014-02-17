@@ -1,3 +1,4 @@
+from flask import Flask, request, render_template
 import tweepy
 import logging
 from time import time
@@ -6,6 +7,7 @@ from keys import CONSUMER_KEY, CONSUMER_SECRET, USER_KEY, USER_SECRET
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+app = Flask(__name__)
 
 class TwitterLimit(Exception):
     """Custom exception handling twiter api reset time for the display"""
@@ -40,72 +42,77 @@ class FollowRTProc(object):
         self.users = []
 
     def add_retweeter(self, user):
+        print "Added user : {}".format(user)
         self.users.append(user)
         self.count += user.followers_count
 
     def run(self):
-        count = self.api.get_status(self.tweetid).retweet_count
-        rts = self.api.retweets(self.tweetid, count)
+        try:
+            count = self.api.get_status(self.tweetid).retweet_count
+            rts = self.api.retweets(self.tweetid)
+        except tweepy.TweepError:
+            return 0
         for rt in rts:
             self.add_retweeter(rt.user)
-        if "--not-me" not in argv:
-            me = self.api.get_user(screen_name=self.orga)
-            self.add_retweeter(me)
-
-    def print_count(self):
-        if "-v" in argv:
-            for user in self.users:
-                print "User {} has {} followers.".format(user.screen_name, user.followers_count)
-                print "_______________________________________\n"
-            print "That's a total of {} retweets.".format(len(self.users) - 1)
-        print "Tweet {} has an audience of about {} people.".format(self.tweetid, self.count)
+        me = self.api.get_user(screen_name=self.orga)
+        self.add_retweeter(me)
         return self.count
 
-def usage():
-    print ("Usage: audience [link]\n"
-           "Example: audience https://twitter.com/SDEntrepreneurs/status/431412241150529536")
-    exit(1)
-
+    def print_count(self):
+        json = {
+            "screen_name": [],
+            "followers": []
+            }
+        print "Users : {}".format(self.users)
+        for user in self.users:
+            json["screen_name"].append(user.screen_name)
+            json["followers"].append(user.followers_count)
+        return json
+            
 def process(auth, datas):
     total = 0
-    for data in datas:
+    json = {
+        "total": 0,
+        "users": {"screen_name": [], "followers": []}
+        }
+    for data in [d for d in datas if d]:
         limits = RateLimit(auth.api.rate_limit_status())
-        limits.check_remaining("statuses", "retweets/:id")
-        limits.check_remaining("users", "show/:id")
+        try:
+            limits.check_remaining("statuses", "retweets/:id")
+            limits.check_remaining("users", "show/:id")
+        except TwitterLimit as e:
+            return json, e
         frt = FollowRTProc(auth.api, data["tweetid"], data["orga"])
-        frt.run()
-        total += frt.print_count()
-    print "Total audience : {}".format(total)
+        json["total"] += frt.run()
+        users = frt.print_count()
+        json["users"]["screen_name"] += users["screen_name"]
+        json["users"]["followers"] += users["followers"]
+    return json, None
 
 def parse_url(url):
-    tweetid = url.split('/')[-1]
-    orga = url.split('/')[-3]
+    try:
+        tweetid = url.split('/')[-1]
+        orga = url.split('/')[-3]
+    except IndexError:
+        return None
     return {"tweetid":tweetid, "orga":orga}
     
-def get_urls_from_filename(filename):
-    urls = []
-    if "-v" in argv:
-        print "Starting audience computing for :"
-    with open(filename) as f:
-        for url in f.readlines():
-            urls.append(url.strip("\n"))
-            if "-v" in argv:
-                print urls[-1]
-    return urls
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST' and "urls" in request.values:
+        urls = request.values["urls"].split('\n')
+        auth = AuthHandler(CONSUMER_KEY, CONSUMER_SECRET, USER_KEY, USER_SECRET)
+        urls = [u for u in map(parse_url, urls) if u]
+        stats, error = process(auth, urls)
+        stats["users"] = zip(stats["users"]["screen_name"], stats["users"]["followers"])
+        print stats
+        nurl = {"total": len(urls), "done": len(stats["users"])}
+        return render_template('index.html', stats=stats, error=error, nurl=nurl)
+    return render_template('index.html', stats = {}, error=False)
+
 
 def main():
-    if len(argv) < 2 or (argv[1] == "-f" and len(argv) < 3):
-        usage()
-    if argv[1] == "-f":
-        urls = get_urls_from_filename(argv[2])
-    else:
-        urls = [argv[1]]
-    auth = AuthHandler(CONSUMER_KEY, CONSUMER_SECRET, USER_KEY, USER_SECRET)
-    try:
-        process(auth, map(parse_url, urls))
-    except TwitterLimit as e:
-        print str(e)
-
+    app.run(debug=True)
 
 if __name__ == "__main__":
     main()
