@@ -14,6 +14,7 @@ setup(
             ]
         },
     install_requires = [
-        'tweepy==2.2'
+        'tweepy==2.2',
+        'Flask==0.10.1'
         ],
 )

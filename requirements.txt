@@ -1,4 +1,9 @@
+Flask==0.10.1
+Jinja2==2.7.2
+MarkupSafe==0.18
+Werkzeug==0.9.4
 argparse==1.2.1
-audience==0.1
+-e git+git@github.com:ZebediahKillgrave/audience.git@66d6a14c4962192c1869cf8ae6419ae7184e1182#egg=audience-master
+itsdangerous==0.23
 tweepy==2.2
 wsgiref==0.1.2
