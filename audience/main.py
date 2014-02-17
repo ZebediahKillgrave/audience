@@ -47,13 +47,14 @@ class FollowRTProc(object):
         self.count += user.followers_count
 
     def run(self):
+        count = self.api.get_status(self.tweetid).retweet_count
         try:
-            count = self.api.get_status(self.tweetid).retweet_count
             rts = self.api.retweets(self.tweetid)
         except tweepy.TweepError:
-            return 0
-        for rt in rts:
-            self.add_retweeter(rt.user)
+            pass
+        else:
+            for rt in rts:
+                self.add_retweeter(rt.user)
         me = self.api.get_user(screen_name=self.orga)
         self.add_retweeter(me)
         return self.count
