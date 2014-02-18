@@ -19,13 +19,11 @@
       <a class="close" data-dismiss="alert">×</a>
       {{ error }}
     </div>
-    </p>
     {% endif %}
     {% if stats %}
     <p>
       <h2>
 	Total : {{ stats["total"] }} 
-	[{{ nurl["done"] }}/{{ nurl["total"] }}]
       </h2>
       <br>
     </p>
@@ -41,5 +39,4 @@
       <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
       <script src="{{url_for('static', filename='js/bootstrap.min.js')}}"></script>
   </body>
-
 </html>
