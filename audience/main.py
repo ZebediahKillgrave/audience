@@ -2,12 +2,12 @@ from flask import Flask, request, render_template
 import tweepy
 import logging
 from time import time
-from sys import argv
 from keys import CONSUMER_KEY, CONSUMER_SECRET, USER_KEY, USER_SECRET
+
+app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-app = Flask(__name__)
 
 class TwitterLimit(Exception):
     """Custom exception handling twiter api reset time for the display"""
@@ -113,7 +113,7 @@ def index():
 
 
 def main():
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
 
 if __name__ == "__main__":
     main()
