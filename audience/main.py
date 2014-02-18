@@ -1,10 +1,11 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, session, url_for, redirect
 import tweepy
 from tweepy import TweepError
 from time import time
-from keys import CONSUMER_KEY, CONSUMER_SECRET, USER_KEY, USER_SECRET
+from keys import CONSUMER_KEY, CONSUMER_SECRET
 
 app = Flask(__name__)
+app.secret_key = 'bisous<3'
 
 class TwitterLimit(Exception):
     """
@@ -26,16 +27,6 @@ class RateLimit(object):
         current = self.resources[category]["/%s/%s" % (category, name)]
         if current["remaining"] - done <= 0:
             raise TwitterLimit("Limit reached for %s" % (name), current["reset"])
-
-class AuthHandler(object):
-    """
-    Simple class that will connect us to twitter api when instantiate
-    """
-    def __init__(self, consumer, consumer_secret, token, token_secret):
-        self.auth = tweepy.OAuthHandler(consumer, consumer_secret)
-        self.auth.set_access_token(token, token_secret)
-        self.api = tweepy.API(self.auth)
-
 
 class Tweet(object):
     def __init__(self, tweetid, user, api):
@@ -76,8 +67,30 @@ class Process(object):
                     break
         return total
 
+@app.route('/login')
+def login():
+    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.secure = True
+    url = auth.get_authorization_url()
+    session['tokens'] = (auth.request_token.key, auth.request_token.secret)
+    return redirect(url)
+
+@app.route('/callback')
+def callback():
+    if 'oauth_verifier' in request.values:
+        verifier = request.values['oauth_verifier']
+        auth = tweepy.OAuthHandler(CONSUMER, CONSUMER_SECRET)
+        token = session['tokens']
+        auth.set_request_token(token[0], token[1])
+        auth.get_access_token(verifier)
+        key, secret = auth.access_token.key, auth.access_token.secret
+        return redirect(url_for('index'))
+    return redirect(url_for('login'))
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    if 'twitter_auth' not in session:
+        return redirect(url_for('login'))
     stats = {}
     if request.method == 'POST' and "urls" in request.values:
         urls = [u.strip() for u in request.values["urls"].split('\n')]
@@ -85,6 +98,7 @@ def index():
         auth = AuthHandler(CONSUMER_KEY, CONSUMER_SECRET, USER_KEY, USER_SECRET)
         stats["total"] = Process(urls, auth).run()
     return render_template('index.html', stats=stats)
+
 
 
 def main():
