@@ -14,12 +14,20 @@
   </head>
   <body>
     <h1>Audience</h1>
+    <p>
+      {% if user %}
+      @{{user.screen_name}} <a href="{{url_for('logout')}}">logout</a>
+      {% else %}
+      <a href="{{url_for('login')}}">login</a>
+      {% endif %}
+    </p>
     {% if error %}
     <div class="alert alert-danger">
       <a class="close" data-dismiss="alert">×</a>
       {{ error }}
     </div>
     {% endif %}
+    {% if user %}
     {% if stats %}
     <p>
       <h2>
@@ -35,8 +43,9 @@
 	<br><br>
 	<input type="submit" value="Calculer..">
       </form>
-    <p>
-      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-      <script src="{{url_for('static', filename='js/bootstrap.min.js')}}"></script>
+    </p>
+    {% endif %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="{{url_for('static', filename='js/bootstrap.min.js')}}"></script>
   </body>
 </html>

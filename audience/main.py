@@ -3,21 +3,26 @@ import tweepy
 from tweepy import TweepError
 from time import time
 from keys import CONSUMER_KEY, CONSUMER_SECRET
+import redis
 
 app = Flask(__name__)
+app.debug = True
 app.secret_key = 'bisous<3'
+redis = redis.Redis('localhost')
 
 class TwitterLimit(Exception):
     """
     Custom exception handling twiter api reset time for the display
     """
     def __init__(self, message, reset):
-        Exception.__init__(self, "%s [reset in %dsec]" % (message, reset - time()))
+        Exception.__init__(self, "%s [reset dans %dsec]" % (message, reset - time()))
 
 class RateLimit(object):
     """
     This class will check the remaining calls to twitter api on demand and
     raise a TwitterLimit exception if there is no more call available
+
+    Param is api.rate_limti_status()
     """
     def __init__(self, limits):
         self.resources = limits["resources"]
@@ -26,7 +31,7 @@ class RateLimit(object):
     def check_remaining(self, category, name, done = 0):
         current = self.resources[category]["/%s/%s" % (category, name)]
         if current["remaining"] - done <= 0:
-            raise TwitterLimit("Limit reached for %s" % (name), current["reset"])
+            raise TwitterLimit("Rate limit atteint pour %s" % (name), current["reset"])
 
 class Tweet(object):
     def __init__(self, tweetid, user, api):
@@ -62,10 +67,23 @@ class Process(object):
         for url in self.urls:
             if url.tweetid and url.user:
                 try:
+                    limit = RateLimit(self.auth.api.rate_limit_status())
+                    limit.check_remaining('statuses', 'retweets/:id')
+                    # limit.check_remaining('users', 'show')
                     total += Tweet(url.tweetid, url.user, self.auth.api).compute_audience()
-                except TweepError:
-                    break
-        return total
+                except TwitterLimit as e:
+                    return total, e
+        return total, ""
+
+class Auth(object):
+    def __init__(self, consumer_key, consumer_secret, user_key, user_secret):
+        self.auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+        self.auth.set_access_token(user_key, user_secret)
+        self.api = None
+        self.connect()
+
+    def connect(self):
+        self.api = tweepy.API(self.auth)
 
 @app.route('/login')
 def login():
@@ -79,25 +97,33 @@ def login():
 def callback():
     if 'oauth_verifier' in request.values:
         verifier = request.values['oauth_verifier']
-        auth = tweepy.OAuthHandler(CONSUMER, CONSUMER_SECRET)
+        auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
         token = session['tokens']
         auth.set_request_token(token[0], token[1])
         auth.get_access_token(verifier)
         key, secret = auth.access_token.key, auth.access_token.secret
+        session['twitter_auth'] = (key, secret)
         return redirect(url_for('index'))
     return redirect(url_for('login'))
 
+@app.route('/logout')
+def logout():
+    if 'twitter_auth' in session:
+        del session['twitter_auth']
+    return redirect(url_for('index'))
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    if 'twitter_auth' not in session:
-        return redirect(url_for('login'))
     stats = {}
+    error = ""
+    if 'twitter_auth' not in session:
+        return render_template('index.html', stats=stats, user=None)
+    auth = Auth(CONSUMER_KEY, CONSUMER_SECRET, 
+                session['twitter_auth'][0], session['twitter_auth'][1])
     if request.method == 'POST' and "urls" in request.values:
         urls = [u.strip() for u in request.values["urls"].split('\n')]
-        print urls
-        auth = AuthHandler(CONSUMER_KEY, CONSUMER_SECRET, USER_KEY, USER_SECRET)
-        stats["total"] = Process(urls, auth).run()
-    return render_template('index.html', stats=stats)
+        stats["total"], error = Process(urls, auth).run()
+    return render_template('index.html', stats=stats, user=auth.api.me(), error=error)
 
 
 
